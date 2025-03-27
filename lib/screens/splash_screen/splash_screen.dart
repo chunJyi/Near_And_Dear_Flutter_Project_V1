@@ -2,10 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:near_and_dear_flutter_v1/model/current_user.dart';
-import 'package:near_and_dear_flutter_v1/model/location_model.dart';
 import 'package:near_and_dear_flutter_v1/providers/user_provider.dart';
 import 'package:near_and_dear_flutter_v1/services/auth_checker_service.dart';
-import 'package:near_and_dear_flutter_v1/services/location_service.dart';
 import 'package:near_and_dear_flutter_v1/services/supabase_service.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,12 +18,10 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   bool _hasError = false;
   SharedPreferences? _prefs;
-  late LocationService _locationService;
 
   @override
   void initState() {
     super.initState();
-    _locationService = LocationService();
     _initializeUser();
   }
 
@@ -45,9 +41,6 @@ class _SplashScreenState extends State<SplashScreen> {
       user = await SupabaseService.getUserDetailsObj(user.id);
       userProvider.setUser(user);
 
-      // Start location tracking
-      _startLocationListener(userProvider);
-
       if (mounted) _navigateToNextScreen();
     } catch (e) {
       debugPrint("Error loading user data: $e");
@@ -60,30 +53,6 @@ class _SplashScreenState extends State<SplashScreen> {
     final userString = _prefs?.getString("userData");
     return userString != null ? jsonDecode(userString) : null;
   }
-
-  /// Starts listening to location updates and updates `UserProvider`.
-Future<void> _startLocationListener(UserProvider userProvider) async {
-  bool hasPermission = await _locationService.requestPermission();
-  if (!hasPermission) {
-    debugPrint("❌ Location permission denied.");
-    return;
-  }
-
-  _locationService.startListening((LocationModel newLocation) async {
-    if (userProvider.user != null) {
-      CurrentUser updatedUser = userProvider.user!.copyWith(
-        locationModel: newLocation,
-        updated_at: DateTime.now().toIso8601String(), // Add updated_at timestamp
-      );
-
-      // Update user in provider
-      userProvider.setUser(updatedUser);
-
-      // Save updated location & updated_at to Supabase
-      await SupabaseService.updateUserLocation(updatedUser);
-    }
-  });
-}
 
 
   /// Navigates to AuthChecker to determine the next screen.

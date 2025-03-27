@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:near_and_dear_flutter_v1/providers/user_provider.dart';
 import 'package:near_and_dear_flutter_v1/screens/splash_screen/splash_screen.dart';
-import 'package:near_and_dear_flutter_v1/services/background_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 
@@ -11,7 +10,6 @@ const supabaseKey =
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await BackgroundService.initializeService();
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
 
   runApp(
